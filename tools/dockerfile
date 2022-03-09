@@ -1,0 +1,57 @@
+ARG USER
+ARG PASSWORD
+ARG USER_HOME
+ARG INSTALL
+ARG PROJECT
+
+##################
+###--- User ---###
+##################
+
+FROM python:alpine AS user
+
+#-- Essential packages
+RUN apk add --no-cache git bash
+
+#-- unprivileged user
+RUN adduser "${USER}" --shell /bin/bash --disabled-password
+RUN echo "${USER}:${PASSWORD}" | chpasswd
+
+#-- Time-Zone setup
+RUN ln -fs /usr/share/zoneinfo/Europe/Paris /etc/localtime
+RUN apk add --no-cache tzdata
+
+#-- Locales setup
+# Actually difficult in Alpine Linux
+
+######################
+###--- Packages ---###
+######################
+
+FROM user AS kaggle
+
+#-- Temporary folder
+RUN mkdir $INSTALL
+WORKDIR $INSTALL
+
+#-- Install Python dependencies
+RUN curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
+
+#-- Install Kaggle profile and tools
+RUN pip install --no-cache-dir kaggle
+RUN mkdir $USER_HOME/.kaggle
+COPY tools/kaggle.json $USER_HOME/.kaggle/
+RUN chmod 600 $USER_HOME/.kaggle/kaggle.json
+
+#######################
+###--- Execution ---###
+#######################
+
+FROM kaggle AS finprint
+
+#-- Execution profil
+RUN mkdir $PROJECT
+WORKDIR $PROJECT
+RUN rm -fR $INSTALL
+USER $USER
+ENTRYPOINT tail -f /dev/null

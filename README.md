@@ -1,2 +1,3 @@
 # finprint
-Python package for the Whale and Dolphin Identification competition
+
+`finprint` is a Python package for the Whale and Dolphin Identification competition
